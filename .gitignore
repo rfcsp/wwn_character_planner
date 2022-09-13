@@ -5,7 +5,10 @@ build/
 !**/src/test/**/build/
 
 ### IntelliJ IDEA ###
+.idea/
 .idea/*
+.idea/**/
+.idea/**/*
 *.iws
 *.iml
 *.ipr
@@ -37,5 +40,3 @@ bin/
 
 ### Mac OS ###
 .DS_Store
-/.idea/
-/.idea/
