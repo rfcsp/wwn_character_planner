@@ -19,7 +19,7 @@ jobs:
     - name: Setup Java JDK
       uses: actions/setup-java@v3.5.0
       with:
-        java-version: 11
+        java-version: 17
         distribution: temurin
           
     - name: Build with Gradle
@@ -29,3 +29,6 @@ jobs:
         
     - name: Run build with Gradle wrapper
       run: ./gradlew packageExe
+      
+    - name: List files
+      run: dir /a-D /S /B
