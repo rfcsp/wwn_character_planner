@@ -37,4 +37,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: macos-binary
-        path: build/compose/binaries/main/exe/main-1.0.0.dmg
+        path: build/compose/binaries/main/dmg/main-1.0.0.dmg
