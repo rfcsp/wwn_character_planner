@@ -28,4 +28,4 @@ jobs:
         cache-disabled: true
         
     - name: Run build with Gradle wrapper
-      run: ./gradlew build
+      run: ./gradlew packageExe
