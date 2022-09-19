@@ -30,5 +30,8 @@ jobs:
     - name: Run build with Gradle wrapper
       run: ./gradlew packageExe
       
-    - name: List files
-      run: dir /a-D /S /B
+    - name: Upload exe
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-binary
+        path: build/compose/binaries/main/exe/main-1.0.0.exe
