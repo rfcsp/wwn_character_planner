@@ -1,0 +1,37 @@
+name: Macos Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Java JDK
+      uses: actions/setup-java@v3.5.0
+      with:
+        java-version: 17
+        distribution: temurin
+          
+    - name: Build with Gradle
+      uses: gradle/gradle-build-action@v2
+      with:
+        cache-disabled: true
+        
+    - name: Run build with Gradle wrapper
+      run: ./gradlew packageDmg
+      
+    - name: Upload exe
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-binary
+        path: build/compose/binaries/main/exe/main-1.0.0.dmg
