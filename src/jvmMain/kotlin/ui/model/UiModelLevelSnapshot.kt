@@ -18,6 +18,7 @@ data class UiModelLevelSnapshot(
         model = model,
         level = level,
     ),
+    val foci: MutableStateFlow<List<Focus>> = state(listOf()),
 ) {
     init {
         val attributeBumps =
@@ -44,6 +45,27 @@ data class UiModelLevelSnapshot(
             newAttrs
         }
             .onEach(attributes::emit)
+            .launch()
+
+        var focuses = model.fociChoices.map { t -> t.toList().mapNotNull { it?.first } }
+
+        if (level > 1) {
+            val bumps = combine(
+                model.levelUpChoices
+                    .filterKeys { it <= level }
+                    .values
+            ) {
+                it.mapNotNull { l -> l.focus?.first }
+            }
+
+
+            focuses = combine(focuses, bumps) { start, lvls ->
+                start + lvls
+            }
+        }
+
+        focuses
+            .onEach(foci::emit)
             .launch()
 
     }

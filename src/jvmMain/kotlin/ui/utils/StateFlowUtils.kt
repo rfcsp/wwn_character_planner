@@ -89,3 +89,8 @@ fun <T> Flow<List<T>>.asState(): State<List<T>> =
 @JvmName("asStateArray")
 inline fun <reified T> Flow<Array<T>>.asState(): State<Array<T>> =
     collectAsState(arrayOf())
+
+@Composable
+@JvmName("asStatePair")
+fun <L, R> Flow<Pair<L, R>?>.asState(): State<Pair<L, R>?> =
+    collectAsState(null)

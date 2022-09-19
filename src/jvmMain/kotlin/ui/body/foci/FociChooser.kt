@@ -99,7 +99,7 @@ fun FocusPickRow(
     classCombo: ClassCombo,
     label: String,
     focusChoice: FocusChoice,
-    currentFocus: Focus,
+    currentFocus: Focus?,
     currentSkill: Skill?,
     previousFocus: List<Focus>,
     onSelection: (Focus, Skill?) -> Unit,
@@ -124,11 +124,11 @@ fun FocusPickRow(
             onSelection(f, f.skillChoice?.run(::defaultSelect))
         }
 
-        currentFocus.skillChoice?.apply {
+        currentFocus?.skillChoice?.apply {
 
             SkillPicker(
                 skillChoice = this,
-                skill = currentSkill!!,
+                skill = currentSkill ?: defaultSelect(this),
                 modifier = Modifier.width(IntrinsicSize.Min),
             ) {
                 onSelection(currentFocus, it)
@@ -140,7 +140,7 @@ fun FocusPickRow(
 @Composable
 fun FocusPicker(
     focusAvailable: List<Focus>,
-    currentFocus: Focus,
+    currentFocus: Focus?,
     onSelection: (Focus) -> Unit,
 ) {
 
@@ -149,7 +149,7 @@ fun FocusPicker(
     Box {
 
         Text(
-            text = currentFocus.name,
+            text = currentFocus?.name ?: "-----",
             modifier = Modifier
                 .background(MaterialTheme.colors.secondary)
                 .clickable { expanded = !expanded },

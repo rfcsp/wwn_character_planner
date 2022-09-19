@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import planner.chacracter.classes.healthBonus
 import ui.body.result.AttributesResult
+import ui.body.result.FocusResult
 import ui.body.result.SkillsResult
 import ui.model.UiModelController
 import ui.utils.asState
@@ -94,6 +95,9 @@ fun SheetResult(
 
         // Skills
         SkillsResult(level)
+
+        // Foci
+        FocusResult(level)
 
     }
 }
