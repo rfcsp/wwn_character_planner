@@ -3,31 +3,23 @@
 package ui.body.skill
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import planner.chacracter.Skill
 import planner.chacracter.SkillSelection
 import ui.model.UiModel
-
+import ui.model.share
 
 fun skillMap(
     model: UiModel,
-    includeFree: Boolean = true,
-    includeSkillSelection: Boolean = true,
-    includeFocus: Boolean = true,
-    includeOverflows: Boolean = true,
-    capLevel1: Boolean = true,
-): Flow<Map<Skill, Int>> {
+    level: Int = 0,
+): SharedFlow<Map<Skill, Int>> = when (level) {
 
-    val skillFlows = mutableListOf<Flow<List<Skill>>>()
+    0,
+    1,
+    -> {
+        val skillFlows = mutableListOf<Flow<List<Skill>>>()
 
-    if (includeFree) {
         skillFlows += model.skillChoices.freeSkill.map { listOf(it) }
-    }
-
-    if (includeSkillSelection) {
 
         skillFlows += model.skillSelection.map { selection ->
             when (selection) {
@@ -53,33 +45,47 @@ fun skillMap(
             }
         }
             .flatMapLatest { it }
-    }
 
 
-    if (includeFocus) {
         skillFlows += model.fociChoices.map { foci -> foci.toList().mapNotNull { it?.second } }
+
+        if (level != 0) {
+            skillFlows += model.skillOverflows
+        }
+
+        combine(*skillFlows.toTypedArray()) { skills: Array<List<Skill>> -> skills.flatMap { it } }
+            .map { skills ->
+                val skillMap = Skill.values().associateWith { -1 }.toMutableMap()
+
+                skills.forEach { skill -> skillMap.computeIfPresent(skill) { _, v -> v + 1 } }
+
+                skillMap
+            }
+            .map {
+                // Level 0 is raw before capping
+                when (level) {
+                    0 -> it
+                    1 -> it.mapValues { (_, v) -> if (v > 1) 1 else v }
+                    else -> throw Exception("CARP")
+                }
+            }
+            .share()
     }
 
-    if (includeOverflows) {
-        skillFlows += model.skillOverflows
+    else -> {
+        combine(
+            skillMap(model, level = level - 1).map { it.toMutableMap() },
+            model.levelUpChoices[level]?.map { it.skillBumps } ?: flow<List<Skill>> { listOf<Skill>() }
+        ) { map, skills ->
+            skills.forEach { map.computeIfPresent(it) { _, v -> v + 1 } }
+            map
+        }
+            .share()
     }
-
-    return combine(*skillFlows.toTypedArray()) { skills: Array<List<Skill>> -> skills.flatMap { it } }
-        .map { skills ->
-            val skillMap = Skill.values().associateWith { -1 }.toMutableMap()
-
-            skills.forEach { skill -> skillMap.computeIfPresent(skill) { _, v -> v + 1 } }
-
-            skillMap
-        }
-        .map {
-            if (capLevel1)
-                it.mapValues { (_, v) -> if (v > 1) 1 else v }
-            else
-                it
-        }
 }
 
-fun getUncappedSkills(model: UiModel) =
+
+fun getCreationUncappedSkills(model: UiModel) =
     skillMap(model)
         .map { it.filterValues { v -> v < 1 }.keys.sorted() }
+        .share()

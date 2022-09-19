@@ -19,7 +19,7 @@ fun SkillOverflowAtCreation() {
 
     val overflowState = UiModelController.uiModel.skillOverflows.asState()
     val overflows by remember { overflowState }
-    val uncappedState = getUncappedSkills(UiModelController.uiModel).collectAsState(listOf())
+    val uncappedState = getCreationUncappedSkills(UiModelController.uiModel).collectAsState(listOf())
     val uncappedSkills by remember { uncappedState }
 
     Column {

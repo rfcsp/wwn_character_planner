@@ -15,7 +15,7 @@ enum class Attribute(val physical: Boolean = true) {
     }
 }
 
-fun attributeModifier(value: Int): Int =
+fun attributeModifier(value: Int) =
     when {
         value <= Attribute.Min -> -2
         value in 4..7 -> -1
@@ -24,6 +24,14 @@ fun attributeModifier(value: Int): Int =
         value >= Attribute.Max -> 2
         else -> throw Exception("Invalid attribute value $value")
     }
+
+val AttributeBumpCostAndMinLevel = mapOf(
+    1 to (1 to 2),
+    2 to (2 to 2),
+    3 to (3 to 3),
+    4 to (4 to 6),
+    5 to (5 to 9),
+)
 
 fun anyAttribute() = Attribute.values()
 

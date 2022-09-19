@@ -31,15 +31,13 @@ fun skillChoiceCombat() = Skill.values().filter { it.combat }.toTypedArray()
 
 fun skillChoiceNonCombat() = Skill.values().filter { !it.combat }.toTypedArray()
 
-fun skillBumpCostAndMinLevel(newLevel: Int): Pair<Int, Int> =
-    when (newLevel) {
-        0 -> 1 to 1
-        1 -> 2 to 1
-        2 -> 3 to 3
-        3 -> 4 to 6
-        4 -> 5 to 9
-        else -> throw Exception("Invalid new skill level $newLevel")
-    }
+val skillBumpCostAndMinLevel = mapOf(
+    0 to (1 to 1),
+    1 to (2 to 1),
+    2 to (3 to 3),
+    3 to (4 to 6),
+    4 to (5 to 9),
+)
 
 sealed class SkillChoice
 

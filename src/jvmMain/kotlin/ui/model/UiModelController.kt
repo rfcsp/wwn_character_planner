@@ -3,8 +3,6 @@
 package ui.model
 
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import planner.chacracter.Attribute
@@ -18,8 +16,14 @@ object UiModelController {
 
     val uiModel = UiModel()
 
-    val levelSnapshots = (1..10)
-        .associateWith { UiModelLevelSnapshot(uiModel, it) }
+    val levelSnapshots: Map<Int, UiModelLevelSnapshot> = run {
+        val snapshots = mutableListOf<UiModelLevelSnapshot>()
+        (1..10).forEach {
+            snapshots += UiModelLevelSnapshot(uiModel, it, previousSnapshot = snapshots.lastOrNull())
+        }
+
+        snapshots.associateBy { it.level }
+    }
 
     private val attributeModifications = MutableSharedFlow<Pair<Attribute, Int>>()
 
@@ -31,93 +35,91 @@ object UiModelController {
             map
         }
             .onEach(uiModel.attributes::emit)
-            .flowOn(Dispatchers.Unconfined)
-            .launchIn(GlobalScope)
+            .launch()
 
         combine(skillOverflowModification, uiModel.skillOverflows.map(List<Skill>::toMutableList)) { skill, overflows ->
             overflows[skill.first] = skill.second
             overflows
         }
             .onEach(uiModel.skillOverflows::emit)
-            .flowOn(Dispatchers.Unconfined)
-            .launchIn(GlobalScope)
+            .launch()
     }
 
     fun setName(name: String) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.name.emit(name)
         }
     }
 
     fun setBackground(background: Background) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.background.emit(background)
         }
     }
 
     fun setSkillSelection(skillSelection: SkillSelection) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.skillSelection.emit(skillSelection)
         }
     }
 
     fun setFreeSkill(skill: Skill) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.skillChoices.freeSkill.emit(skill)
         }
 
     }
 
     fun setQuick1(skill: Skill) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.skillChoices.quick.skill1.emit(skill)
         }
     }
 
     fun setQuick2(skill: Skill) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.skillChoices.quick.skill2.emit(skill)
         }
     }
 
     fun setLearning1(skill: Skill) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.skillChoices.learning.skill1.emit(skill)
         }
     }
 
     fun setLearning2(skill: Skill) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.skillChoices.learning.skill2.emit(skill)
         }
     }
 
     fun setRoll1(rollChoice: RollChoice) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.skillChoices.roll.choice1.emit(rollChoice)
         }
     }
 
     fun setRoll2(rollChoice: RollChoice) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.skillChoices.roll.choice2.emit(rollChoice)
         }
     }
 
     fun setRoll3(rollChoice: RollChoice) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.skillChoices.roll.choice3.emit(rollChoice)
         }
     }
 
     fun setAttribute(attr: Attribute, value: Int) {
-        GlobalScope.launch {
+        scope.launch {
             attributeModifications.emit(attr to value)
         }
     }
 
     fun setClassCombo(classCombo: ClassCombo) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.classCombo.emit(
                 if (!classCombo.first.full && classCombo.second == null) {
                     classCombo.copy(second = ClassType.values().first())
@@ -129,13 +131,13 @@ object UiModelController {
     }
 
     fun setFociChoices(fociChoice: FociChoice) {
-        GlobalScope.launch {
+        scope.launch {
             uiModel.fociChoices.emit(fociChoice)
         }
     }
 
     fun setOverflow(index: Int, skill: Skill) {
-        GlobalScope.launch {
+        scope.launch {
             skillOverflowModification.emit(index to skill)
         }
     }

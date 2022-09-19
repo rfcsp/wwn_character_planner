@@ -12,8 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import planner.chacracter.classes.healthBonus
 import ui.body.result.AttributesResult
 import ui.body.result.SkillsResult
+import ui.model.UiModelController
+import ui.utils.asState
 
 @Composable
 fun SheetResult(
@@ -24,7 +27,7 @@ fun SheetResult(
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
 
         // Level Picker
@@ -63,6 +66,27 @@ fun SheetResult(
                         }
                 }
             }
+        }
+
+        // HP
+        Row {
+            Text(
+                text = "HP:"
+            )
+
+            val classComboState = UiModelController.uiModel.classCombo.asState()
+            val classCombo by remember { classComboState }
+
+            val healthBonus = healthBonus(level, classCombo)
+
+            Text(
+                text = if (healthBonus == 0)
+                    "${level}d6"
+                else if (healthBonus < 0)
+                    "${level}d6 $healthBonus"
+                else
+                    "${level}d6 +$healthBonus"
+            )
         }
 
         // Attributes
