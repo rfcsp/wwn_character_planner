@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import planner.chacracter.MultipleSkillChoice
 import planner.chacracter.SingleSkillChoice
 import planner.chacracter.Skill
@@ -22,7 +22,7 @@ fun SkillPicker(
     skillChoice: SkillChoice,
     skill: Skill,
     modifier: Modifier,
-    onSkillChosen: (Skill) -> Unit
+    onSkillChosen: (Skill) -> Unit,
 ) {
 
     var expanded by remember { mutableStateOf(false) }
@@ -34,7 +34,7 @@ fun SkillPicker(
             text = skill.name,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (skillChoice is SingleSkillChoice) Color.White else Color.LightGray)
+                .background(if (skillChoice is SingleSkillChoice) MaterialTheme.colors.onPrimary else MaterialTheme.colors.secondary)
                 .clickable(enabled = skillChoice !is SingleSkillChoice) { expanded = !expanded },
         )
 
@@ -82,7 +82,7 @@ fun SkillPicker(
     skillChoices: List<SkillChoice>,
     skill: Skill,
     modifier: Modifier,
-    onSkillChosen: (Skill) -> Unit
+    onSkillChosen: (Skill) -> Unit,
 ) {
 
     var expanded by remember { mutableStateOf(false) }
@@ -94,7 +94,7 @@ fun SkillPicker(
             text = skill.name,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (skillChoices.size == 1) Color.White else Color.LightGray)
+                .background(if (skillChoices.size == 1) MaterialTheme.colors.onPrimary else MaterialTheme.colors.secondary)
                 .clickable { expanded = !expanded },
         )
 
@@ -128,7 +128,7 @@ fun SkillPicker(
                         ) {
                             Text(
                                 text = it.name,
-                                color = Color.LightGray,
+                                color = MaterialTheme.colors.secondary,
                             )
                         }
 

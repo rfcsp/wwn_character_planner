@@ -84,3 +84,8 @@ fun Flow<RollChoice>.asState(): State<RollChoice> =
 @JvmName("asStateList")
 fun <T> Flow<List<T>>.asState(): State<List<T>> =
     collectAsState(listOf())
+
+@Composable
+@JvmName("asStateArray")
+inline fun <reified T> Flow<Array<T>>.asState(): State<Array<T>> =
+    collectAsState(arrayOf())

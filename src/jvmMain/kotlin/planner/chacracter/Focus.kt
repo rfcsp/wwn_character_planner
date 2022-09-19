@@ -101,7 +101,8 @@ val Focus.canChooseMultipleTimes: Boolean
         DevelopedAttribute,
 
         Specialist1,
-        Specialist2 -> true
+        Specialist2,
+        -> true
 
         else -> false
     }
@@ -109,15 +110,18 @@ val Focus.canChooseMultipleTimes: Boolean
 fun Focus.isAllowedWithClass(classes: ClassCombo): Boolean =
     when (this) {
         ArmoredMagic1,
-        ArmoredMagic2 -> classes.toList().any { it?.spellcaster ?: false }
+        ArmoredMagic2,
+        -> classes.toList().any { it?.spellcaster ?: false }
 
         Nullifier1,
-        Nullifier2 -> classes.toList().any { !(it?.mage ?: false) }
+        Nullifier2,
+        -> classes.toList().any { !(it?.mage ?: false) }
 
         DevelopedAttribute -> classes.toList().any { !(it?.mage ?: false) }
 
         Polymath1,
-        Polymath2 -> classes.toList().any { it == ClassType.Expert }
+        Polymath2,
+        -> classes.toList().any { it == ClassType.Expert }
 
         else -> true
     }
@@ -168,7 +172,8 @@ val Focus.skillChoice: SkillChoice?
                 Magic,
                 Stab,
                 Shoot,
-                Punch -> false
+                Punch,
+                -> false
 
                 else -> true
             }

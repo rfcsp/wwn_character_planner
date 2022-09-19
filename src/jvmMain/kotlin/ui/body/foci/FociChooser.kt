@@ -5,10 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import planner.chacracter.*
 import planner.chacracter.classes.ClassCombo
@@ -141,7 +141,7 @@ fun FocusPickRow(
 fun FocusPicker(
     focusAvailable: List<Focus>,
     currentFocus: Focus,
-    onSelection: (Focus) -> Unit
+    onSelection: (Focus) -> Unit,
 ) {
 
     var expanded by remember { mutableStateOf(false) }
@@ -151,7 +151,7 @@ fun FocusPicker(
         Text(
             text = currentFocus.name,
             modifier = Modifier
-                .background(Color.LightGray)
+                .background(MaterialTheme.colors.secondary)
                 .clickable { expanded = !expanded },
         )
 

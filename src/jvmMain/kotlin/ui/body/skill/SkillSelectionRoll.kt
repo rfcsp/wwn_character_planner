@@ -5,11 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import planner.chacracter.*
 import ui.model.RollChoice
@@ -108,7 +108,7 @@ fun GrowthLearningPicker(
         Text(
             text = labels[choice.first]!!,
             modifier = Modifier
-                .background(Color.LightGray)
+                .background(MaterialTheme.colors.secondary)
                 .clickable { expanded = !expanded }
         )
 
@@ -184,7 +184,7 @@ fun GrowthPicker(
         Text(
             text = determineGrowthLabel(choice),
             modifier = Modifier
-                .background(Color.LightGray)
+                .background(MaterialTheme.colors.secondary)
                 .clickable { expanded = !expanded }
         )
 
@@ -293,7 +293,7 @@ fun growthStatPicker(
     Text(
         text = if (firstAttr) choice.second.name else choice.third!!.name,
         modifier = Modifier
-            .background(Color.LightGray)
+            .background(MaterialTheme.colors.secondary)
             .clickable { expanded = !expanded }
     )
 

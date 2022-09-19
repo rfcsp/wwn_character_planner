@@ -7,10 +7,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import planner.chacracter.classes.healthBonus
 import ui.body.result.AttributesResult
@@ -20,7 +20,7 @@ import ui.utils.asState
 
 @Composable
 fun SheetResult(
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     var level by remember { mutableStateOf(1) }
 
@@ -40,7 +40,7 @@ fun SheetResult(
                 Text(
                     text = "Level $level",
                     modifier = Modifier
-                        .background(Color.LightGray)
+                        .background(MaterialTheme.colors.secondary)
                         .clickable {
                             expanded = !expanded
                         }

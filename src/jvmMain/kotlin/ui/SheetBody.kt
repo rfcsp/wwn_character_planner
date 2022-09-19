@@ -11,7 +11,7 @@ import ui.SheetResult
 
 @Composable
 fun SheetBody(
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Row(
         modifier = modifier,

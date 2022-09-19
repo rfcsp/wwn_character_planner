@@ -14,7 +14,8 @@ enum class ClassType(val full: Boolean = true) {
 val ClassType.mage: Boolean
     get() = when (this) {
         ClassType.Warrior,
-        ClassType.Expert -> false
+        ClassType.Expert,
+        -> false
 
         else -> true
     }
@@ -23,7 +24,8 @@ val ClassType.spellcaster: Boolean
     get() = when (this) {
         ClassType.HighMage,
         ClassType.Necromancer,
-        ClassType.Elementalist -> true
+        ClassType.Elementalist,
+        -> true
 
         else -> false
     }

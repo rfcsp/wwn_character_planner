@@ -41,11 +41,13 @@ private fun <T1, T2> defaultCombine(
         .launch()
 }
 
-val dispatcher = Executors.newSingleThreadExecutor { r ->
-    Thread(r).also {
-        it.isDaemon = true
-    }
-}.asCoroutineDispatcher()
+val dispatcher = Dispatchers.IO
+
+//    Executors.newSingleThreadExecutor { r ->
+//    Thread(r).also {
+//        it.isDaemon = true
+//    }
+//}.asCoroutineDispatcher()
 
 val scope = CoroutineScope(dispatcher)
 
@@ -54,11 +56,9 @@ fun <T> Flow<T>.launch() =
         .launchIn(scope)
 
 fun <T> Flow<T>.share() =
-    shareIn(
-        scope,
-        SharingStarted.Eagerly,
-        1,
-    )
+    runBlocking(dispatcher) {
+        stateIn(scope)
+    }
 
 private fun ensureFreeSkillIsValid(model: UiModel) = with(model) {
     defaultCombine(
@@ -223,17 +223,7 @@ fun validateLevel(model: UiModel, level: Int) {
         pointsAvailableFromFocusFLow,
         skillPointsAvailableFlow,
     ) { unspent, focusLeftover, available ->
-        when {
-            // Clear everything if something bad occurred
-            unspent < 0 -> {
-                model.levelUpChoices[level]!!.emit(LevelUpChoices(level))
-                null
-            }
-
-            else -> {
-                unspent + available + focusLeftover
-            }
-        }
+        unspent + available + focusLeftover
     }
 
         .filterNotNull()
@@ -251,17 +241,24 @@ fun validateLevel(model: UiModel, level: Int) {
 
         // Skills
         run {
-            val bumped = mutableListOf<Skill>()
-            levelUpChoices.skillBumps
-                .forEach { skill ->
-                    val newLevel = previousSkillMap[skill]!! + bumped.count { it == skill }
-                    val cost =
-                        skillBumpCostAndMinLevel[newLevel]?.first ?: skillBumpCostAndMinLevel.values.maxOf { it.first }
 
-                    newAvailablePoints -= cost
+            newAvailablePoints -= levelUpChoices.skillBumps
+                .distinct()
+                .associateWith { skill -> levelUpChoices.skillBumps.count { it == skill } }
+                .mapValues {
 
-                    bumped += skill
+                    var currentCost = 0
+                    val baseLevel = previousSkillMap[it.key]!!
+
+                    for (i in 1..it.value) {
+                        currentCost += skillBumpCostAndMinLevel[baseLevel + i]?.first
+                            ?: skillBumpCostAndMinLevel.values.maxOf { v -> v.first }
+                    }
+
+                    currentCost
                 }
+                .values
+                .sum()
         }
 
         run {
@@ -280,7 +277,6 @@ fun validateLevel(model: UiModel, level: Int) {
         levelUpChoices.copy(unspentSKillPoints = newAvailablePoints)
     }
         .onEach {
-            println("Level $level :: it = $it")
             model.levelUpChoices[level]!!.emit(it)
         }
         .launch()

@@ -1,5 +1,3 @@
-@file:OptIn(DelicateCoroutinesApi::class)
-
 package ui.model
 
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -19,7 +17,7 @@ object UiModelController {
     val levelSnapshots: Map<Int, UiModelLevelSnapshot> = run {
         val snapshots = mutableListOf<UiModelLevelSnapshot>()
         (1..10).forEach {
-            snapshots += UiModelLevelSnapshot(uiModel, it, previousSnapshot = snapshots.lastOrNull())
+            snapshots += UiModelLevelSnapshot(uiModel, it)
         }
 
         snapshots.associateBy { it.level }
@@ -28,6 +26,10 @@ object UiModelController {
     private val attributeModifications = MutableSharedFlow<Pair<Attribute, Int>>()
 
     private val skillOverflowModification = MutableSharedFlow<Pair<Int, Skill>>()
+
+    private val levelUpSkillModifications = uiModel.levelUpChoices.keys.associateWith {
+        MutableSharedFlow<List<Skill>>()
+    }
 
     init {
         combine(attributeModifications, uiModel.attributes.map(Map<Attribute, Int>::toMutableMap)) { attr, map ->
@@ -43,6 +45,14 @@ object UiModelController {
         }
             .onEach(uiModel.skillOverflows::emit)
             .launch()
+
+        uiModel.levelUpChoices.forEach { (key, value) ->
+            combine(value, levelUpSkillModifications[key]!!) { curr, skills ->
+                curr.copy(skillBumps = skills)
+            }
+                .onEach(uiModel.levelUpChoices[key]!!::emit)
+                .launch()
+        }
     }
 
     fun setName(name: String) {
@@ -139,6 +149,12 @@ object UiModelController {
     fun setOverflow(index: Int, skill: Skill) {
         scope.launch {
             skillOverflowModification.emit(index to skill)
+        }
+    }
+
+    fun setSkillChoices(level: Int, skills: List<Skill>) {
+        scope.launch {
+            levelUpSkillModifications[level]!!.emit(skills)
         }
     }
 }

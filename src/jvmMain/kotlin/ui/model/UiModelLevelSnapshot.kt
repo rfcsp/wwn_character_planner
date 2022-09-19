@@ -13,13 +13,13 @@ import ui.utils.state
 data class UiModelLevelSnapshot(
     val model: UiModel,
     val level: Int,
-    val previousSnapshot: UiModelLevelSnapshot? = null,
     val attributes: MutableStateFlow<Map<Attribute, Int>> = state(mapOf()),
-    val skillMap: MutableStateFlow<Map<Skill, Int>> = state(mapOf()),
-    val foci: List<Focus> = listOf(),
+    val skillMap: StateFlow<Map<Skill, Int>> = skillMap(
+        model = model,
+        level = level,
+    ),
 ) {
     init {
-
         val attributeBumps =
             combine(
                 model.levelUpChoices
@@ -34,24 +34,17 @@ data class UiModelLevelSnapshot(
                 }
 
         combine(
-            model.attributes.map { it.toMutableMap() },
+            model.attributes,
             attributeBumps,
         ) { attrs, bumps ->
-            bumps.forEach { attrs.computeIfPresent(it) { _, v -> v + 1 } }
-            attrs
+
+            val newAttrs = attrs.toMutableMap()
+
+            bumps.forEach { newAttrs.computeIfPresent(it) { _, v -> v + 1 } }
+            newAttrs
         }
-            .onEach {
-                attributes.emit(it)
-            }
+            .onEach(attributes::emit)
             .launch()
-
-        skillMap(
-            model = model,
-            level = level,
-        )
-            .onEach(skillMap::emit)
-            .launch()
-
 
     }
 

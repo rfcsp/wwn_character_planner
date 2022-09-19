@@ -5,10 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import planner.chacracter.classes.ClassType
 import ui.model.UiModelController
@@ -35,7 +35,7 @@ fun ClassChooser() {
             Text(
                 text = classCombo.first.name,
                 modifier = Modifier
-                    .background(Color.LightGray)
+                    .background(MaterialTheme.colors.secondary)
                     .clickable {
                         expanded = !expanded
                     }
@@ -69,7 +69,7 @@ fun ClassChooser() {
             Text(
                 text = classCombo.second?.name ?: "-",
                 modifier = Modifier
-                    .background(Color.LightGray)
+                    .background(MaterialTheme.colors.secondary)
                     .clickable {
                         expanded = !expanded
                     }
