@@ -30,7 +30,10 @@ jobs:
     - name: Run build with Gradle wrapper
       run: ./gradlew packageDmg
       
-    - name: Upload exe
+    - name: List files
+      run: ls -R
+      
+    - name: Upload dmg
       uses: actions/upload-artifact@v3
       with:
         name: macos-binary
