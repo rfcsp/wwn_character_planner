@@ -1,6 +1,7 @@
 name: Macos Build
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - '*'
