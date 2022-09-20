@@ -2,6 +2,7 @@
 
 package ui.model
 
+import debugLog
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import planner.chacracter.*
@@ -221,15 +222,23 @@ fun validateLevel(model: UiModel, level: Int) {
 
         var newAvailablePoints = availablePoints
 
-        // Max skill level
-        val maxSkillLevel = skillMaxLevel(level)
-
         // Focus
         run {
             levelUpChoices.focus?.second?.apply {
-                if (previousSkillMap[this]!! >= maxSkillLevel) {
-                    newAvailablePoints += 3
+
+                val maxSkillLevel = skillMaxLevel(level - 1)
+
+                val currLevel = previousSkillMap[this]!!
+
+                if (level == 5 && this == Skill.Heal) debugLog("newAvailablePoints = $newAvailablePoints")
+                newAvailablePoints += when (currLevel) {
+                    maxSkillLevel -> 3
+                    -1 -> 0
+                    0 -> 1
+                    1 -> 0
+                    else -> 3
                 }
+                if (level == 5 && this == Skill.Heal) debugLog("newAvailablePoints = $newAvailablePoints")
             }
         }
 

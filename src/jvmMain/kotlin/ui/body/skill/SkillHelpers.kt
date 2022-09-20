@@ -96,7 +96,13 @@ fun skillMap(
                             newMap.computeIfPresent(this) { _, v ->
                                 val skillMaxLevel = skillMaxLevel(level)
 
-                                if (v < skillMaxLevel) v + 1 else v
+                                when(v) {
+                                    skillMaxLevel -> v
+                                    -1 -> 1
+                                    0 -> 1
+                                    1 -> 2
+                                    else -> v
+                                }
                             }
                         }
 
