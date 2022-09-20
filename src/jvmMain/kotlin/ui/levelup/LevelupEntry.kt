@@ -10,7 +10,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import planner.chacracter.*
+import planner.chacracter.Attribute
+import planner.chacracter.AttributeBumpCostAndMinLevel
+import planner.chacracter.FocusChoice
+import planner.chacracter.choiceOf
 import ui.body.foci.FocusPickRow
 import ui.body.skill.SkillPicker
 import ui.body.skill.skillMaxLevel
@@ -58,23 +61,16 @@ fun LevelupSkillChoices(level: Int) {
     Column {
         val skillMaxLevel = skillMaxLevel(level)
 
-        val uncappedSkillsState = combine(
+        val uncappedSkillsState =
             UiModelController.uiModel.skillMaps[level]!!.map { skillMap ->
                 skillMap
                     .filterValues { v ->
                         v < skillMaxLevel
                     }
-            },
-            UiModelController.uiModel.levelUpChoices[level]!!.map { it.unspentSKillPoints },
-        ) { map, unspent ->
-
-            map.filterValues {
-                skillBumpCostAndMinLevel[it + 1]!!.first < unspent
+                    .keys
+                    .toTypedArray()
             }
-                .keys
-                .toTypedArray()
-        }
-            .asState()
+                .asState()
 
         val uncappedSkills by remember { uncappedSkillsState }
 
