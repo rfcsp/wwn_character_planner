@@ -1,6 +1,5 @@
 package ui.model
 
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import planner.chacracter.*
@@ -32,6 +31,10 @@ object UiModelController {
         MutableSharedFlow<Pair<Focus, Skill?>?>()
     }
 
+    private val levelUpAttrsModifications = uiModel.levelUpChoices.keys.associateWith {
+        MutableSharedFlow<List<Attribute>>()
+    }
+
     init {
         combine(attributeModifications, uiModel.attributes.map(Map<Attribute, Int>::toMutableMap)) { attr, map ->
             map[attr.first] = attr.second
@@ -58,6 +61,14 @@ object UiModelController {
         uiModel.levelUpChoices.forEach { (key, value) ->
             combine(value, levelUpFocusModifications[key]!!) { curr, focus ->
                 curr.copy(focus = focus)
+            }
+                .onEach(uiModel.levelUpChoices[key]!!::emit)
+                .launch()
+        }
+
+        uiModel.levelUpChoices.forEach { (key, value) ->
+            combine(value, levelUpAttrsModifications[key]!!) { curr, attrs ->
+                curr.copy(abilityBumps = attrs)
             }
                 .onEach(uiModel.levelUpChoices[key]!!::emit)
                 .launch()
@@ -170,6 +181,12 @@ object UiModelController {
     fun setFocus(level: Int, focus: Focus, skill: Skill?) {
         scope.launch {
             levelUpFocusModifications[level]!!.emit(focus to skill)
+        }
+    }
+
+    fun setAttributeChoices(level: Int, attrs: MutableList<Attribute>) {
+        scope.launch {
+            levelUpAttrsModifications[level]!!.emit(attrs)
         }
     }
 }

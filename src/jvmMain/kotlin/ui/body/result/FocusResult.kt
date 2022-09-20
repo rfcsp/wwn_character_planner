@@ -2,7 +2,7 @@ package ui.body.result
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import ui.model.UiModelController

@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import planner.chacracter.Skill
 import planner.chacracter.SkillSelection
+import planner.chacracter.skillBumpCostAndMinLevel
 import ui.model.UiModel
 import ui.model.share
 
@@ -71,7 +72,11 @@ fun skillMap(
                             // Level 0 is raw before capping
                             when (lvl) {
                                 0 -> it
-                                1 -> it.mapValues { (_, v) -> if (v > 1) 1 else v }
+                                1 -> {
+                                    val skillMaxLevel = skillMaxLevel(level)
+                                    it.mapValues { (_, v) -> if (v > skillMaxLevel) 1 else v }
+                                }
+
                                 else -> throw Exception("CARP")
                             }
                         }
@@ -81,12 +86,22 @@ fun skillMap(
                 else -> {
                     combine(
                         skillMap(model, level = lvl - 1),
-                        model.levelUpChoices[lvl]!!.map { it.skillBumps },
-                    ) { map, skills ->
+                        model.levelUpChoices[lvl]!!,
+                    ) { map, levelUpChoices ->
 
                         val newMap = map.toMutableMap()
 
-                        skills.forEach {
+                        // Focus
+                        levelUpChoices.focus?.second?.run {
+                            newMap.computeIfPresent(this) { _, v ->
+                                val skillMaxLevel = skillMaxLevel(level)
+
+                                if (v < skillMaxLevel) v + 1 else v
+                            }
+                        }
+
+                        // Skill bumps
+                        levelUpChoices.skillBumps.forEach {
                             newMap.computeIfPresent(it) { _, v -> v + 1 }
                         }
                         newMap
@@ -96,6 +111,11 @@ fun skillMap(
             }
         }
     }
+
+fun skillMaxLevel(level: Int): Int =
+    skillBumpCostAndMinLevel
+        .filter { it.value.second <= level }
+        .maxOf { it.key }
 
 
 fun getCreationUncappedSkills(model: UiModel) = runBlocking {

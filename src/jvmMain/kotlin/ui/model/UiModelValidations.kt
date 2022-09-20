@@ -9,7 +9,7 @@ import planner.chacracter.classes.ClassCombo
 import planner.chacracter.classes.ClassType
 import planner.chacracter.classes.skillPointsPerLevel
 import ui.body.skill.skillMap
-import java.util.concurrent.Executors
+import ui.body.skill.skillMaxLevel
 
 fun setupModelConnections(model: UiModel) {
 
@@ -164,23 +164,6 @@ fun validateLevel(model: UiModel, level: Int) {
             )
         ?: flow { emit(0) }
 
-    // Any leftovers from focus
-    val pointsAvailableFromFocusFLow = combine(
-        model.levelUpChoices[level]!!.map { it.focus }.map { it?.second },
-        model.skillMaps[level - 1]!!,
-    ) { focusSkill, map ->
-        focusSkill?.run {
-            val (_, minLevelRequired) = skillBumpCostAndMinLevel[map[this]!! + 1]!!
-
-            if (level < minLevelRequired) {
-                3
-            } else {
-                0
-            }
-
-        } ?: 0
-    }
-
     // Previous Ability Bumps
     val previousAttributeBumps =
         when (level) {
@@ -220,10 +203,9 @@ fun validateLevel(model: UiModel, level: Int) {
     // Calculate unspent
     val availablePointsFlow = combine(
         unspentPointsFlow,
-        pointsAvailableFromFocusFLow,
         skillPointsAvailableFlow,
-    ) { unspent, focusLeftover, available ->
-        unspent + available + focusLeftover
+    ) { unspent, available ->
+        unspent + available
     }
 
         .filterNotNull()
@@ -238,6 +220,18 @@ fun validateLevel(model: UiModel, level: Int) {
     { availablePoints, previousBumps, previousSkillMap, levelUpChoices ->
 
         var newAvailablePoints = availablePoints
+
+        // Max skill level
+        val maxSkillLevel = skillMaxLevel(level)
+
+        // Focus
+        run {
+            levelUpChoices.focus?.second?.apply {
+                if (previousSkillMap[this]!! >= maxSkillLevel) {
+                    newAvailablePoints += 3
+                }
+            }
+        }
 
         // Skills
         run {
@@ -261,6 +255,7 @@ fun validateLevel(model: UiModel, level: Int) {
                 .sum()
         }
 
+        // Attributes
         run {
             var totalBumps = previousBumps
 

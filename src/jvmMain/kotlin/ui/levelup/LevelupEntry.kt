@@ -1,21 +1,20 @@
 package ui.levelup
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import planner.chacracter.*
 import ui.body.foci.FocusPickRow
 import ui.body.skill.SkillPicker
+import ui.body.skill.skillMaxLevel
+import ui.model.LevelUpChoices
 import ui.model.UiModelController
 import ui.model.levelHasFoci
 import ui.utils.asState
@@ -57,18 +56,22 @@ fun UnspentSkillPoints(level: Int) {
 @Composable
 fun LevelupSkillChoices(level: Int) {
     Column {
-        val skillMaxLevel = skillBumpCostAndMinLevel
-            .filter { it.value.second <= level }
-            .keys
-            .maxOf { it }
+        val skillMaxLevel = skillMaxLevel(level)
 
-        val uncappedSkillsState = UiModelController.uiModel.skillMaps[level]!!.map { skillMap ->
-            skillMap
-                .filterValues { v ->
-                    v < skillMaxLevel
-                }
+        val uncappedSkillsState = combine(
+            UiModelController.uiModel.skillMaps[level]!!.map { skillMap ->
+                skillMap
+                    .filterValues { v ->
+                        v < skillMaxLevel
+                    }
+            },
+            UiModelController.uiModel.levelUpChoices[level]!!.map { it.unspentSKillPoints },
+        ) { map, unspent ->
+
+            map.filterValues {
+                skillBumpCostAndMinLevel[it + 1]!!.first < unspent
+            }
                 .keys
-                .sorted()
                 .toTypedArray()
         }
             .asState()
@@ -77,6 +80,17 @@ fun LevelupSkillChoices(level: Int) {
 
         val skillChoicesState = UiModelController.uiModel.levelUpChoices[level]!!.map { it.skillBumps }.asState()
         val skillChoices by remember { skillChoicesState }
+
+        val attrChoicesState = UiModelController.uiModel.levelUpChoices[level]!!.map { it.abilityBumps }.asState()
+        val attrChoices by remember { attrChoicesState }
+
+        val attrBumpCountState = combine(
+            *UiModelController.uiModel.levelUpChoices.filterKeys { it <= level }.values.toTypedArray()
+        ) {
+            it.flatMap(LevelUpChoices::abilityBumps).size
+        }
+            .asState()
+        val attrBumpCount by remember { attrBumpCountState }
 
         skillChoices.forEachIndexed { idx, skill ->
             Row(
@@ -111,6 +125,17 @@ fun LevelupSkillChoices(level: Int) {
             }
         }
 
+        attrChoices.forEachIndexed { idx, attr ->
+            AttrPicker(
+                curr = attr,
+            ) {
+                val attrs = attrChoices.toMutableList()
+                it?.run { attrs[idx] = this }
+                    ?: attrs.removeAt(idx)
+                UiModelController.setAttributeChoices(level, attrs)
+            }
+        }
+
         val unspentState = UiModelController.uiModel.levelUpChoices[level]!!.map { it.unspentSKillPoints }.asState()
         val unspent by remember { unspentState }
 
@@ -128,6 +153,33 @@ fun LevelupSkillChoices(level: Int) {
                         text = "Add Skill",
                         color = MaterialTheme.colors.secondary,
                     )
+                }
+            }
+
+            val availableBumps = AttributeBumpCostAndMinLevel.filterKeys { it <= (attrBumpCount + 1) }
+
+            if (
+                attrBumpCount < AttributeBumpCostAndMinLevel.maxOf { it.key }
+                &&
+                (
+                        availableBumps.isNotEmpty()
+                                &&
+                                level >= availableBumps.maxOf { it.value.second }
+                        )
+            ) {
+                Row {
+                    Button(
+                        onClick = {
+                            val attrs = attrChoices.toMutableList()
+                            attrs += Attribute.values().first()
+                            UiModelController.setAttributeChoices(level, attrs)
+                        },
+                    ) {
+                        Text(
+                            text = "Add Attribute",
+                            color = MaterialTheme.colors.secondary,
+                        )
+                    }
                 }
             }
 
@@ -159,5 +211,59 @@ fun FocusLevelPicker(level: Int) {
         previousFocus = previousFoci
     ) { f, s ->
         UiModelController.setFocus(level, f, s)
+    }
+}
+
+@Composable
+fun AttrPicker(
+    curr: Attribute,
+    onSelect: (Attribute?) -> Unit,
+) {
+
+    var expanded by remember { mutableStateOf(false) }
+
+    Row {
+
+        Box {
+
+            Text(
+                text = curr.name,
+                modifier = Modifier
+                    .background(MaterialTheme.colors.secondary)
+                    .clickable { expanded = !expanded },
+            )
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.width(IntrinsicSize.Min),
+            ) {
+
+                Attribute.values().forEach {
+                    DropdownMenuItem(
+                        onClick = {
+                            expanded = false
+                            onSelect(it)
+                        }
+                    ) {
+                        Text(
+                            text = it.name,
+                        )
+                    }
+                }
+            }
+        }
+
+        Button(
+            onClick = {
+                onSelect(null)
+            }
+        ) {
+            Text(
+                text = "Remove Attribute",
+                color = MaterialTheme.colors.secondary,
+            )
+        }
+
     }
 }
