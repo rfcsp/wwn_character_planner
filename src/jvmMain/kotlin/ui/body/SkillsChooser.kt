@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.flow.map
 import planner.chacracter.SkillSelection
 import ui.body.skill.SkillPicker
 import ui.body.skill.SkillSelectionLearning
@@ -19,9 +20,9 @@ import ui.utils.asState
 @Composable
 fun SkillsChooser() {
 
-    val skillSelectionState = UiModelController.uiModel.skillSelection.asState()
+    val skillSelectionState = UiModelController.uiModel.map { it.skillSelection }.asState()
     val skillSelection by remember { skillSelectionState }
-    val backgroundState = UiModelController.uiModel.background.asState()
+    val backgroundState = UiModelController.uiModel.map { it.background }.asState()
     val background by remember { backgroundState }
 
     // Free is always there
@@ -30,7 +31,7 @@ fun SkillsChooser() {
             text = "Free:"
         )
 
-        val skillState = UiModelController.uiModel.skillChoices.freeSkill.asState()
+        val skillState = UiModelController.uiModel.map { it.skillChoices.freeSkill }.asState()
         val freeSkill by remember { skillState }
 
         SkillPicker(

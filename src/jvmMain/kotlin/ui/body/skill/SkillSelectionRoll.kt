@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.map
 import planner.chacracter.*
 import ui.model.RollChoice
 import ui.model.UiModelController
@@ -31,7 +32,7 @@ fun SkillSelectionRoll() {
                 text = "Roll 1:"
             )
 
-            val rollChoiceState = UiModelController.uiModel.skillChoices.roll.choice1.asState()
+            val rollChoiceState = UiModelController.uiModel.map { it.skillChoices.roll.choice1 }.asState()
             val choice1 by remember { rollChoiceState }
 
             GrowthChoosing(
@@ -48,7 +49,7 @@ fun SkillSelectionRoll() {
                 text = "Roll 2:"
             )
 
-            val rollChoiceState = UiModelController.uiModel.skillChoices.roll.choice2.asState()
+            val rollChoiceState = UiModelController.uiModel.map { it.skillChoices.roll.choice2 }.asState()
             val choice2 by remember { rollChoiceState }
 
             GrowthChoosing(
@@ -65,7 +66,7 @@ fun SkillSelectionRoll() {
                 text = "Roll 3:"
             )
 
-            val rollChoiceState = UiModelController.uiModel.skillChoices.roll.choice3.asState()
+            val rollChoiceState = UiModelController.uiModel.map { it.skillChoices.roll.choice3 }.asState()
             val choice3 by remember { rollChoiceState }
 
             GrowthChoosing(
@@ -118,7 +119,7 @@ fun GrowthLearningPicker(
             modifier = Modifier.width(IntrinsicSize.Min),
         ) {
 
-            val backgroundState = UiModelController.uiModel.background.asState()
+            val backgroundState = UiModelController.uiModel.map { it.background }.asState()
             val background by remember { backgroundState }
 
             DropdownMenuItem(
@@ -173,7 +174,7 @@ fun GrowthPicker(
 ) {
     require(!choice.first)
 
-    val backgroundState = UiModelController.uiModel.background.asState()
+    val backgroundState = UiModelController.uiModel.map { it.background }.asState()
     val background by remember { backgroundState }
 
     // Entry Picker
@@ -335,7 +336,7 @@ fun LearningPicker(
 ) {
     require(choice.first)
 
-    val backgroundState = UiModelController.uiModel.background.asState()
+    val backgroundState = UiModelController.uiModel.map { it.background }.asState()
     val background by remember { backgroundState }
 
     SkillPicker(

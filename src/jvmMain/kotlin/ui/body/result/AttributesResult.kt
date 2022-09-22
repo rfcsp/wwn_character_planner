@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.flow.map
 import planner.chacracter.attributeModifier
 import ui.model.UiModelController
 import ui.utils.asState
@@ -16,7 +17,7 @@ import ui.utils.asState
 @Composable
 fun AttributesResult(level: Int) {
 
-    val attributeState = UiModelController.levelSnapshots[level]!!.attributes.asState()
+    val attributeState = UiModelController.levelSnapshots[level]!!.map { it.attributes }.asState()
     val attributes by remember { attributeState }
 
     Column {

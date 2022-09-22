@@ -9,6 +9,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.flow.map
 import planner.chacracter.Background
 import ui.model.UiModelController
 import ui.utils.asState
@@ -30,7 +31,7 @@ fun BackgroundSelector() {
 fun BackgroundDropdown(
     modifier: Modifier,
 ) {
-    val backgroundState = UiModelController.uiModel.background.asState()
+    val backgroundState = UiModelController.uiModel.map { it.background }.asState()
     val background by remember { backgroundState }
     var expanded by remember { mutableStateOf(false) }
 

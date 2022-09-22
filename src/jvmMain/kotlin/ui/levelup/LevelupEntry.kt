@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import planner.chacracter.Attribute
 import planner.chacracter.AttributeBumpCostAndMinLevel
@@ -17,7 +16,6 @@ import planner.chacracter.choiceOf
 import ui.body.foci.FocusPickRow
 import ui.body.skill.SkillPicker
 import ui.body.skill.skillMaxLevel
-import ui.model.LevelUpChoices
 import ui.model.UiModelController
 import ui.model.levelHasFoci
 import ui.utils.asState
@@ -46,13 +44,12 @@ fun LevelupEntry(level: Int) {
 @Composable
 fun UnspentSkillPoints(level: Int) {
 
-    val unspentState = UiModelController.uiModel.levelUpChoices[level]!!.map { it.unspentSKillPoints }.asState()
+    val unspentState = UiModelController.uiModel.map { it.levelUpChoices[level]!!.unspentSKillPoints }.asState()
     val unspent by remember { unspentState }
 
     Text(
         text = "Unspent skill points $unspent",
-        modifier = Modifier.fillMaxWidth()
-            .background(if (unspent < 0) Color.Red else MaterialTheme.colors.onPrimary)
+        modifier = Modifier.fillMaxWidth().background(if (unspent < 0) Color.Red else MaterialTheme.colors.onPrimary)
     )
 }
 
@@ -61,31 +58,24 @@ fun LevelupSkillChoices(level: Int) {
     Column {
         val skillMaxLevel = skillMaxLevel(level)
 
-        val uncappedSkillsState =
-            UiModelController.uiModel.skillMaps[level]!!.map { skillMap ->
-                skillMap
-                    .filterValues { v ->
-                        v < skillMaxLevel
-                    }
-                    .keys
-                    .toTypedArray()
-            }
-                .asState()
+        val uncappedSkillsState = UiModelController.uiModel.map {
+            it.skillMaps[level]!!.filterValues { v ->
+                v < skillMaxLevel
+            }.keys.toTypedArray()
+        }.asState()
 
         val uncappedSkills by remember { uncappedSkillsState }
 
-        val skillChoicesState = UiModelController.uiModel.levelUpChoices[level]!!.map { it.skillBumps }.asState()
+        val skillChoicesState = UiModelController.uiModel.map { it.levelUpChoices[level]!!.skillBumps }.asState()
         val skillChoices by remember { skillChoicesState }
 
-        val attrChoicesState = UiModelController.uiModel.levelUpChoices[level]!!.map { it.abilityBumps }.asState()
+        val attrChoicesState = UiModelController.uiModel.map { it.levelUpChoices[level]!!.abilityBumps }.asState()
         val attrChoices by remember { attrChoicesState }
 
-        val attrBumpCountState = combine(
-            *UiModelController.uiModel.levelUpChoices.filterKeys { it <= level }.values.toTypedArray()
-        ) {
-            it.flatMap(LevelUpChoices::abilityBumps).size
-        }
-            .asState()
+        val attrBumpCountState =
+            UiModelController.uiModel.map {
+                it.levelUpChoices.filterKeys { k -> k <= level }.values.map { v -> v.abilityBumps }.flatten().count()
+            }.asState()
         val attrBumpCount by remember { attrBumpCountState }
 
         skillChoices.forEachIndexed { idx, skill ->
@@ -106,13 +96,11 @@ fun LevelupSkillChoices(level: Int) {
                     UiModelController.setSkillChoices(level, skills)
                 }
 
-                Button(
-                    onClick = {
-                        val skills = skillChoices.toMutableList()
-                        skills.removeAt(idx)
-                        UiModelController.setSkillChoices(level, skills)
-                    }
-                ) {
+                Button(onClick = {
+                    val skills = skillChoices.toMutableList()
+                    skills.removeAt(idx)
+                    UiModelController.setSkillChoices(level, skills)
+                }) {
                     Text(
                         text = "Remove Skill",
                         color = MaterialTheme.colors.secondary,
@@ -126,13 +114,12 @@ fun LevelupSkillChoices(level: Int) {
                 curr = attr,
             ) {
                 val attrs = attrChoices.toMutableList()
-                it?.run { attrs[idx] = this }
-                    ?: attrs.removeAt(idx)
+                it?.run { attrs[idx] = this } ?: attrs.removeAt(idx)
                 UiModelController.setAttributeChoices(level, attrs)
             }
         }
 
-        val unspentState = UiModelController.uiModel.levelUpChoices[level]!!.map { it.unspentSKillPoints }.asState()
+        val unspentState = UiModelController.uiModel.map { it.levelUpChoices[level]!!.unspentSKillPoints }.asState()
         val unspent by remember { unspentState }
 
         if (unspent > 0) {
@@ -154,15 +141,7 @@ fun LevelupSkillChoices(level: Int) {
 
             val availableBumps = AttributeBumpCostAndMinLevel.filterKeys { it <= (attrBumpCount + 1) }
 
-            if (
-                attrBumpCount < AttributeBumpCostAndMinLevel.maxOf { it.key }
-                &&
-                (
-                        availableBumps.isNotEmpty()
-                                &&
-                                level >= availableBumps.maxOf { it.value.second }
-                        )
-            ) {
+            if (attrBumpCount < AttributeBumpCostAndMinLevel.maxOf { it.key } && (availableBumps.isNotEmpty() && level >= availableBumps.maxOf { it.value.second })) {
                 Row {
                     Button(
                         onClick = {
@@ -189,13 +168,13 @@ fun LevelupSkillChoices(level: Int) {
 
 @Composable
 fun FocusLevelPicker(level: Int) {
-    val classComboState = UiModelController.uiModel.classCombo.asState()
+    val classComboState = UiModelController.uiModel.map { it.classCombo }.asState()
     val classCombo by remember { classComboState }
 
-    val focusChoiceState = UiModelController.uiModel.levelUpChoices[level]!!.map { it.focus }.asState()
+    val focusChoiceState = UiModelController.uiModel.map { it.levelUpChoices[level]!!.focus }.asState()
     val focusChoice by remember { focusChoiceState }
 
-    val previousFociState = UiModelController.levelSnapshots[level - 1]!!.foci.asState()
+    val previousFociState = UiModelController.levelSnapshots[level - 1]!!.map { it.foci }.asState()
     val previousFoci by remember { previousFociState }
 
     FocusPickRow(
@@ -224,9 +203,7 @@ fun AttrPicker(
 
             Text(
                 text = curr.name,
-                modifier = Modifier
-                    .background(MaterialTheme.colors.secondary)
-                    .clickable { expanded = !expanded },
+                modifier = Modifier.background(MaterialTheme.colors.secondary).clickable { expanded = !expanded },
             )
 
             DropdownMenu(
@@ -236,12 +213,10 @@ fun AttrPicker(
             ) {
 
                 Attribute.values().forEach {
-                    DropdownMenuItem(
-                        onClick = {
-                            expanded = false
-                            onSelect(it)
-                        }
-                    ) {
+                    DropdownMenuItem(onClick = {
+                        expanded = false
+                        onSelect(it)
+                    }) {
                         Text(
                             text = it.name,
                         )
@@ -250,11 +225,9 @@ fun AttrPicker(
             }
         }
 
-        Button(
-            onClick = {
-                onSelect(null)
-            }
-        ) {
+        Button(onClick = {
+            onSelect(null)
+        }) {
             Text(
                 text = "Remove Attribute",
                 color = MaterialTheme.colors.secondary,

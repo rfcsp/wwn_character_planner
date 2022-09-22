@@ -8,13 +8,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.flow.map
 import ui.model.UiModelController
 import ui.utils.asState
 
 @Composable
 fun SkillSelectionQuick() {
 
-    val backgroundState = UiModelController.uiModel.background.asState()
+    val backgroundState = UiModelController.uiModel.map { it.background }.asState()
     val background by remember { backgroundState }
 
     Row {
@@ -22,7 +23,7 @@ fun SkillSelectionQuick() {
             text = "Quick 1:"
         )
 
-        val skillState = UiModelController.uiModel.skillChoices.quick.skill1.asState()
+        val skillState = UiModelController.uiModel.map { it.skillChoices.quick.skill1 }.asState()
         val skill by remember { skillState }
 
         SkillPicker(
@@ -40,7 +41,7 @@ fun SkillSelectionQuick() {
             text = "Quick 2:"
         )
 
-        val skillState = UiModelController.uiModel.skillChoices.quick.skill2.asState()
+        val skillState = UiModelController.uiModel.map { it.skillChoices.quick.skill2 }.asState()
         val skill by remember { skillState }
 
         SkillPicker(

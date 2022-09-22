@@ -5,189 +5,112 @@ import kotlinx.coroutines.launch
 import planner.chacracter.*
 import planner.chacracter.classes.ClassCombo
 import planner.chacracter.classes.ClassType
+import ui.utils.DefaultCoroutineScope
+import ui.utils.share
+import ui.utils.state
 
 object UiModelController {
 
-    val uiModel = UiModel()
+    val uiModel = state(validateModel(UiModel()))
 
-    val levelSnapshots: Map<Int, UiModelLevelSnapshot> = run {
-        val snapshots = mutableListOf<UiModelLevelSnapshot>()
-        (1..10).forEach {
-            snapshots += UiModelLevelSnapshot(uiModel, it)
+    val levelSnapshots: Map<Int, StateFlow<UiModelLevelSnapshot>> =
+        (1..10).associateWith { level ->
+            uiModel.map { UiModelLevelSnapshot(it, level) }.share()
         }
 
-        snapshots.associateBy { it.level }
+    fun setName(name: String) = updateModel {
+        it.copy(name = name)
     }
 
-    private val attributeModifications = MutableSharedFlow<Pair<Attribute, Int>>()
-
-    private val skillOverflowModification = MutableSharedFlow<Pair<Int, Skill>>()
-
-    private val levelUpSkillModifications = uiModel.levelUpChoices.keys.associateWith {
-        MutableSharedFlow<List<Skill>>()
+    fun setBackground(background: Background) = updateModel {
+        it.copy(background = background)
     }
 
-    private val levelUpFocusModifications = uiModel.levelUpChoices.keys.associateWith {
-        MutableSharedFlow<Pair<Focus, Skill?>?>()
+    fun setSkillSelection(skillSelection: SkillSelection) = updateModel {
+        it.copy(skillSelection = skillSelection)
     }
 
-    private val levelUpAttrsModifications = uiModel.levelUpChoices.keys.associateWith {
-        MutableSharedFlow<List<Attribute>>()
+    fun setFreeSkill(skill: Skill) = updateModel {
+        it.copy(skillChoices = it.skillChoices.copy(freeSkill = skill))
     }
 
-    init {
-        combine(attributeModifications, uiModel.attributes.map(Map<Attribute, Int>::toMutableMap)) { attr, map ->
-            map[attr.first] = attr.second
-            map
-        }
-            .onEach(uiModel.attributes::emit)
-            .launch()
+    fun setQuick1(skill: Skill) = updateModel {
+        it.copy(skillChoices = it.skillChoices.copy(quick = it.skillChoices.quick.copy(skill1 = skill)))
+    }
 
-        combine(skillOverflowModification, uiModel.skillOverflows.map(List<Skill>::toMutableList)) { skill, overflows ->
-            overflows[skill.first] = skill.second
-            overflows
-        }
-            .onEach(uiModel.skillOverflows::emit)
-            .launch()
+    fun setQuick2(skill: Skill) = updateModel {
+        it.copy(skillChoices = it.skillChoices.copy(quick = it.skillChoices.quick.copy(skill2 = skill)))
+    }
 
-        uiModel.levelUpChoices.forEach { (key, value) ->
-            combine(value, levelUpSkillModifications[key]!!) { curr, skills ->
-                curr.copy(skillBumps = skills)
+    fun setLearning1(skill: Skill) = updateModel {
+        it.copy(skillChoices = it.skillChoices.copy(learning = it.skillChoices.learning.copy(skill1 = skill)))
+    }
+
+    fun setLearning2(skill: Skill) = updateModel {
+        it.copy(skillChoices = it.skillChoices.copy(learning = it.skillChoices.learning.copy(skill2 = skill)))
+    }
+
+    fun setRoll1(rollChoice: RollChoice) = updateModel {
+        it.copy(skillChoices = it.skillChoices.copy(roll = it.skillChoices.roll.copy(choice1 = rollChoice)))
+    }
+
+    fun setRoll2(rollChoice: RollChoice) = updateModel {
+        it.copy(skillChoices = it.skillChoices.copy(roll = it.skillChoices.roll.copy(choice2 = rollChoice)))
+    }
+
+    fun setRoll3(rollChoice: RollChoice) = updateModel {
+        it.copy(skillChoices = it.skillChoices.copy(roll = it.skillChoices.roll.copy(choice3 = rollChoice)))
+    }
+
+    fun setAttribute(attr: Attribute, value: Int) = updateModel {
+        val map = it.attributes.toMutableMap()
+        map[attr] = value
+        it.copy(attributes = map)
+    }
+
+    fun setClassCombo(classCombo: ClassCombo) = updateModel {
+        it.copy(
+            classCombo = if (!classCombo.first.full && classCombo.second == null) {
+                classCombo.copy(second = ClassType.values().first())
+            } else {
+                classCombo
             }
-                .onEach(uiModel.levelUpChoices[key]!!::emit)
-                .launch()
-        }
-
-        uiModel.levelUpChoices.forEach { (key, value) ->
-            combine(value, levelUpFocusModifications[key]!!) { curr, focus ->
-                curr.copy(focus = focus)
-            }
-                .onEach(uiModel.levelUpChoices[key]!!::emit)
-                .launch()
-        }
-
-        uiModel.levelUpChoices.forEach { (key, value) ->
-            combine(value, levelUpAttrsModifications[key]!!) { curr, attrs ->
-                curr.copy(abilityBumps = attrs)
-            }
-                .onEach(uiModel.levelUpChoices[key]!!::emit)
-                .launch()
-        }
+        )
     }
 
-    fun setName(name: String) {
-        scope.launch {
-            uiModel.name.emit(name)
-        }
+    fun setFociChoices(fociChoice: FociChoice) = updateModel {
+        it.copy(fociChoices = fociChoice)
     }
 
-    fun setBackground(background: Background) {
-        scope.launch {
-            uiModel.background.emit(background)
-        }
+    fun setOverflow(index: Int, skill: Skill) = updateModel {
+        val overflows = it.skillOverflows.toMutableList()
+        overflows[index] = skill
+        it.copy(skillOverflows = overflows)
     }
 
-    fun setSkillSelection(skillSelection: SkillSelection) {
-        scope.launch {
-            uiModel.skillSelection.emit(skillSelection)
-        }
+    fun setSkillChoices(level: Int, skills: List<Skill>) = updateModel {
+        val map = it.levelUpChoices.toMutableMap()
+        map[level] = map[level]!!.copy(skillBumps = skills)
+        it.copy(levelUpChoices = map)
     }
 
-    fun setFreeSkill(skill: Skill) {
-        scope.launch {
-            uiModel.skillChoices.freeSkill.emit(skill)
-        }
-
+    fun setFocus(level: Int, focus: Focus, skill: Skill?) = updateModel {
+        val map = it.levelUpChoices.toMutableMap()
+        map[level] = map[level]!!.copy(focus = focus to skill)
+        it.copy(levelUpChoices = map)
     }
 
-    fun setQuick1(skill: Skill) {
-        scope.launch {
-            uiModel.skillChoices.quick.skill1.emit(skill)
-        }
+    fun setAttributeChoices(level: Int, attrs: List<Attribute>) = updateModel {
+        val map = it.levelUpChoices.toMutableMap()
+        map[level] = map[level]!!.copy(abilityBumps = attrs)
+        it.copy(levelUpChoices = map)
     }
 
-    fun setQuick2(skill: Skill) {
-        scope.launch {
-            uiModel.skillChoices.quick.skill2.emit(skill)
+    private fun updateModel(action: (UiModel) -> UiModel) =
+        DefaultCoroutineScope.launch {
+            val value = uiModel.first()
+            var newValue = action(value)
+            newValue = validateModel(newValue)
+            uiModel.emit(newValue)
         }
-    }
-
-    fun setLearning1(skill: Skill) {
-        scope.launch {
-            uiModel.skillChoices.learning.skill1.emit(skill)
-        }
-    }
-
-    fun setLearning2(skill: Skill) {
-        scope.launch {
-            uiModel.skillChoices.learning.skill2.emit(skill)
-        }
-    }
-
-    fun setRoll1(rollChoice: RollChoice) {
-        scope.launch {
-            uiModel.skillChoices.roll.choice1.emit(rollChoice)
-        }
-    }
-
-    fun setRoll2(rollChoice: RollChoice) {
-        scope.launch {
-            uiModel.skillChoices.roll.choice2.emit(rollChoice)
-        }
-    }
-
-    fun setRoll3(rollChoice: RollChoice) {
-        scope.launch {
-            uiModel.skillChoices.roll.choice3.emit(rollChoice)
-        }
-    }
-
-    fun setAttribute(attr: Attribute, value: Int) {
-        scope.launch {
-            attributeModifications.emit(attr to value)
-        }
-    }
-
-    fun setClassCombo(classCombo: ClassCombo) {
-        scope.launch {
-            uiModel.classCombo.emit(
-                if (!classCombo.first.full && classCombo.second == null) {
-                    classCombo.copy(second = ClassType.values().first())
-                } else {
-                    classCombo
-                }
-            )
-        }
-    }
-
-    fun setFociChoices(fociChoice: FociChoice) {
-        scope.launch {
-            uiModel.fociChoices.emit(fociChoice)
-        }
-    }
-
-    fun setOverflow(index: Int, skill: Skill) {
-        scope.launch {
-            skillOverflowModification.emit(index to skill)
-        }
-    }
-
-    fun setSkillChoices(level: Int, skills: List<Skill>) {
-        scope.launch {
-            levelUpSkillModifications[level]!!.emit(skills)
-        }
-    }
-
-    fun setFocus(level: Int, focus: Focus, skill: Skill?) {
-        scope.launch {
-            levelUpFocusModifications[level]!!.emit(focus to skill)
-        }
-    }
-
-    fun setAttributeChoices(level: Int, attrs: MutableList<Attribute>) {
-        scope.launch {
-            levelUpAttrsModifications[level]!!.emit(attrs)
-        }
-    }
 }
-

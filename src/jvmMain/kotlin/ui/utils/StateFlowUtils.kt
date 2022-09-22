@@ -5,9 +5,13 @@ package ui.utils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.runBlocking
 import planner.chacracter.Background
 import planner.chacracter.Focus
 import planner.chacracter.Skill
@@ -17,17 +21,17 @@ import planner.chacracter.classes.ClassType
 import ui.model.FociChoice
 import ui.model.RollChoice
 
+val DefaultCoroutineDispatcher = Dispatchers.IO
+
+val DefaultCoroutineScope = CoroutineScope(DefaultCoroutineDispatcher)
+
 fun <T> state(initialValue: T) =
     MutableStateFlow(initialValue)
-//    MutableSharedFlow<T>(
-//        replay = 1,
-//        extraBufferCapacity = 0,
-//        onBufferOverflow = BufferOverflow.DROP_OLDEST
-//    ).also {
-//        scope.launch {
-//            it.emit(initialValue)
-//        }
-//    }
+
+fun <T> Flow<T>.share() =
+    runBlocking(DefaultCoroutineDispatcher) {
+        stateIn(DefaultCoroutineScope)
+    }
 
 @Composable
 @JvmName("asStateString")

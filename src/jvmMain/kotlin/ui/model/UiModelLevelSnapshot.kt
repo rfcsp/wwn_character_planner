@@ -3,71 +3,53 @@
 package ui.model
 
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.flow.*
 import planner.chacracter.Attribute
 import planner.chacracter.Focus
 import planner.chacracter.Skill
 import ui.body.skill.skillMap
-import ui.utils.state
 
 data class UiModelLevelSnapshot(
-    val model: UiModel,
-    val level: Int,
-    val attributes: MutableStateFlow<Map<Attribute, Int>> = state(mapOf()),
-    val skillMap: StateFlow<Map<Skill, Int>> = skillMap(
-        model = model,
-        level = level,
-    ),
-    val foci: MutableStateFlow<List<Focus>> = state(listOf()),
-) {
-    init {
-        val attributeBumps =
-            combine(
-                model.levelUpChoices
-                    .filterKeys { it <= level }
-                    .values
-            )
-            { arr: Array<LevelUpChoices> ->
-                arr.map { it.abilityBumps }.flatten()
-            }
-                .onEmpty {
-                    emit(listOf())
-                }
+    val attributes: Map<Attribute, Int>,
+    val skillMap: Map<Skill, Int>,
+    val foci: List<Focus>,
+)
 
-        combine(
-            model.attributes,
-            attributeBumps,
-        ) { attrs, bumps ->
+fun UiModelLevelSnapshot(
+    model: UiModel,
+    level: Int,
+) = UiModelLevelSnapshot(
+    attributes = attributesFromModel(model, level),
+    skillMap = skillMap(model, level),
+    foci = fociFromModel(model, level),
+)
 
-            val newAttrs = attrs.toMutableMap()
+private fun attributesFromModel(
+    model: UiModel,
+    level: Int,
+): MutableMap<Attribute, Int> {
+    val bump = model
+        .levelUpChoices
+        .filterKeys { it <= level }
+        .values
+        .map { it.abilityBumps }
+        .flatten()
 
-            bumps.forEach { newAttrs.computeIfPresent(it) { _, v -> v + 1 } }
-            newAttrs
-        }
-            .onEach(attributes::emit)
-            .launch()
+    val attributes = model.attributes.toMutableMap()
 
-        var focuses = model.fociChoices.map { t -> t.toList().mapNotNull { it?.first } }
+    bump.forEach { attributes.computeIfPresent(it) { _, v -> v + 1 } }
 
-        if (level > 1) {
-            val bumps = combine(
-                model.levelUpChoices
-                    .filterKeys { it <= level }
-                    .values
-            ) {
-                it.mapNotNull { l -> l.focus?.first }
-            }
-
-
-            focuses = combine(focuses, bumps) { start, lvls ->
-                start + lvls
-            }
-        }
-
-        focuses
-            .onEach(foci::emit)
-            .launch()
-
-    }
-
+    return attributes
 }
+
+private fun fociFromModel(
+    model: UiModel,
+    level: Int,
+) =
+    model.fociChoices.toList().mapNotNull { it?.first } +
+
+            model
+                .levelUpChoices
+                .filterKeys { it <= level }
+                .values
+                .mapNotNull { it.focus }
+                .map { it.first }

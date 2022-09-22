@@ -15,7 +15,6 @@ import ui.body.background.BackgroundSkillChoice
 import ui.body.foci.FociChooser
 import ui.body.skill.SkillOverflowAtCreation
 import ui.levelup.LevelupEntry
-import ui.model.UiModelController
 
 @Composable
 fun SheetChoices(
@@ -50,10 +49,7 @@ fun SheetChoices(
         SkillOverflowAtCreation()
 
         // Level Ups
-        UiModelController.uiModel
-            .levelUpChoices
-            .keys
-            .sorted()
+        (2..10)
             .forEach { LevelupEntry(it) }
     }
 }

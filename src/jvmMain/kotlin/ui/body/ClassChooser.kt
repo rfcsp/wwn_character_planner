@@ -10,6 +10,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.map
 import planner.chacracter.classes.ClassType
 import ui.model.UiModelController
 import ui.utils.asState
@@ -26,7 +27,7 @@ fun ClassChooser() {
             text = "Class:",
         )
 
-        val classComboState = UiModelController.uiModel.classCombo.asState()
+        val classComboState = UiModelController.uiModel.map { it.classCombo }.asState()
         val classCombo by remember { classComboState }
 
         Box {

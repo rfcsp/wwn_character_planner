@@ -9,6 +9,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.flow.map
 import planner.chacracter.SkillSelection
 import ui.model.UiModelController
 import ui.utils.asState
@@ -30,7 +31,7 @@ fun BackgroundSkillChoice() {
 fun SkillSelection(
     modifier: Modifier,
 ) {
-    val skillSelectionState = UiModelController.uiModel.skillSelection.asState()
+    val skillSelectionState = UiModelController.uiModel.map { it.skillSelection }.asState()
     val skillSelection by remember { skillSelectionState }
     var expanded by remember { mutableStateOf(false) }
 

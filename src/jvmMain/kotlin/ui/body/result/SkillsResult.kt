@@ -9,13 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.flow.map
 import ui.model.UiModelController
 import ui.utils.asState
 
 @Composable
 fun SkillsResult(level: Int) {
 
-    val skillMapState = UiModelController.levelSnapshots[level]!!.skillMap.asState()
+    val skillMapState = UiModelController.levelSnapshots[level]!!.map { it.skillMap }.asState()
     val skillMap by remember { skillMapState }
 
     Column {

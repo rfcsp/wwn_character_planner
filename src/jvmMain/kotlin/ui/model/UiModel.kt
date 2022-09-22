@@ -3,80 +3,69 @@
 package ui.model
 
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import planner.chacracter.*
 import planner.chacracter.classes.ClassCombo
 import planner.chacracter.classes.ClassType
-import ui.body.skill.skillMap
-import ui.utils.state
 
-class UiModel {
-    val name: MutableStateFlow<String> = state("")
+data class UiModel(
+    val name: String = "",
 
-    val background: MutableStateFlow<Background> = state(Background.values().first())
+    val background: Background = Background.values().first(),
 
-    val skillSelection: MutableStateFlow<SkillSelection> = state(SkillSelection.Quick)
+    val skillSelection: SkillSelection = SkillSelection.Quick,
 
-    val attributes: MutableStateFlow<Map<Attribute, Int>> = state(Attribute.values().associateWith { 10 })
+    val attributes: Map<Attribute, Int> = Attribute.values().associateWith { 8 },
 
     val skillChoices: SkillChoices = SkillChoices(
-        freeSkill = state(Skill.values().first()),
+        freeSkill = defaultSelect(background.free),
         quick = SkillChoiceQuick(
-            skill1 = state(Skill.values().first()),
-            skill2 = state(Skill.values().first()),
+            skill1 = defaultSelect(background.quick[0]),
+            skill2 = defaultSelect(background.quick[1]),
         ),
         learning = SkillChoiceLearning(
-            skill1 = state(Skill.values().first()),
-            skill2 = state(Skill.values().first()),
+            skill1 = defaultSelect(background.learning[0]),
+            skill2 = defaultSelect(background.learning[1]),
         ),
         roll = SkillChoiceRoll(
-            choice1 = state(RollChoice(true, null, null)),
-            choice2 = state(RollChoice(true, null, null)),
-            choice3 = state(RollChoice(true, null, null)),
+            choice1 = RollChoice(true, null, defaultSelect(background.learning[0])),
+            choice2 = RollChoice(true, null, defaultSelect(background.learning[1])),
+            choice3 = RollChoice(true, null, defaultSelect(background.learning[2])),
         ),
-    )
+    ),
 
-    val classCombo: MutableStateFlow<ClassCombo> = state(ClassCombo(ClassType.Warrior, null))
+    val classCombo: ClassCombo = ClassCombo(ClassType.Warrior, null),
 
-    val fociChoices: MutableStateFlow<FociChoice> = state(
+    val fociChoices: FociChoice =
         FociChoice(
-            Focus.values().first() to null,
-            null,
+            Focus.values()[0] to defaultSelect(Focus.values()[0].skillChoice),
+            Focus.values()[1] to defaultSelect(Focus.values()[0].skillChoice),
             null
-        )
-    )
+        ),
 
-    val skillOverflows: MutableStateFlow<List<Skill>> = state(listOf())
+    val skillOverflows: List<Skill> = listOf(),
 
-    val levelUpChoices: Map<Int, MutableStateFlow<LevelUpChoices>> = (2..10)
-        .associateWith { state(LevelUpChoices(it)) }
+    val levelUpChoices: Map<Int, LevelUpChoices> = (2..10)
+        .associateWith { LevelUpChoices(it) },
 
-    val skillMaps: Map<Int, SharedFlow<Map<Skill, Int>>> by lazy {
-        (0..10)
-            .associateWith { skillMap(this, it) }
-    }
-
-    init {
-        setupModelConnections(this)
-    }
-}
+    val skillMaps: Map<Int, Map<Skill, Int>> = (0..10)
+        .associateWith { Skill.values().associateWith { -1 } },
+)
 
 data class SkillChoices(
-    val freeSkill: MutableStateFlow<Skill>,
+    val freeSkill: Skill,
     val quick: SkillChoiceQuick,
     val learning: SkillChoiceLearning,
     val roll: SkillChoiceRoll,
 )
 
 data class SkillChoiceQuick(
-    val skill1: MutableStateFlow<Skill>,
-    val skill2: MutableStateFlow<Skill>,
+    val skill1: Skill,
+    val skill2: Skill,
 )
 
 data class SkillChoiceLearning(
-    val skill1: MutableStateFlow<Skill>,
-    val skill2: MutableStateFlow<Skill>,
+    val skill1: Skill,
+    val skill2: Skill,
 )
 
 typealias RollChoice = Triple<Boolean, // is it growth or learning
@@ -85,15 +74,24 @@ typealias RollChoice = Triple<Boolean, // is it growth or learning
         >
 
 data class SkillChoiceRoll(
-    val choice1: MutableStateFlow<RollChoice>,
-    val choice2: MutableStateFlow<RollChoice>,
-    val choice3: MutableStateFlow<RollChoice>,
+    val choice1: RollChoice,
+    val choice2: RollChoice,
+    val choice3: RollChoice,
 )
 
 fun defaultSelect(skillChoice: SkillChoice) = when (skillChoice) {
     is SingleSkillChoice -> skillChoice.skill
     is MultipleSkillChoice -> skillChoice.skillList.first()
 }
+
+@JvmName("defaultSelectNullable")
+fun defaultSelect(skillChoice: SkillChoice?) =
+    skillChoice?.run {
+        when (this) {
+            is SingleSkillChoice -> this.skill
+            is MultipleSkillChoice -> this.skillList.first()
+        }
+    }
 
 typealias FociChoice = Triple<
         Pair<Focus, Skill?>,
@@ -108,3 +106,5 @@ data class LevelUpChoices(
     val focus: Pair<Focus, Skill?>? = null,
     val unspentSKillPoints: Int = 0,
 )
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

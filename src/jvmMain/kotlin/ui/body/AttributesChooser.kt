@@ -11,13 +11,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.map
 import planner.chacracter.Attribute
 import ui.model.UiModelController
+import ui.utils.asState
 
 @Composable
 fun AttributesComposer() {
 
-    val state = UiModelController.uiModel.attributes.collectAsState(mapOf())
+    val state = UiModelController.uiModel.map { it.attributes }.asState()
     val attrs by remember { state }
 
     Column {

@@ -10,6 +10,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.map
 import planner.chacracter.*
 import planner.chacracter.classes.ClassCombo
 import planner.chacracter.classes.ClassType
@@ -22,9 +23,9 @@ import ui.utils.asState
 @Composable
 fun FociChooser() {
 
-    val classComboState = UiModelController.uiModel.classCombo.asState()
+    val classComboState = UiModelController.uiModel.map { it.classCombo }.asState()
     val classCombo by remember { classComboState }
-    val fociChoicesState = UiModelController.uiModel.fociChoices.asState()
+    val fociChoicesState = UiModelController.uiModel.map { it.fociChoices }.asState()
     val fociChoice by remember { fociChoicesState }
 
     Column {

@@ -3,118 +3,91 @@
 package ui.body.skill
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 import planner.chacracter.Skill
 import planner.chacracter.SkillSelection
 import planner.chacracter.skillBumpCostAndMinLevel
 import ui.model.UiModel
-import ui.model.share
 
-private val skillMapCache = mutableMapOf<Int, StateFlow<Map<Skill, Int>>>()
-
-@OptIn(ExperimentalCoroutinesApi::class)
 fun skillMap(
     model: UiModel,
     level: Int = 0,
-): StateFlow<Map<Skill, Int>> =
-    skillMapCache.computeIfAbsent(level) { lvl ->
-        runBlocking {
-            when (lvl) {
-                0,
-                1,
-                -> {
-                    val skillFlows = mutableListOf<Flow<List<Skill>>>()
+): Map<Skill, Int> =
+    when (level) {
+        0,
+        1,
+        -> {
 
-                    skillFlows += model.skillChoices.freeSkill.map { listOf(it) }
+            val skills = mutableListOf<Skill>()
 
-                    skillFlows += model.skillSelection.map { selection ->
-                        when (selection) {
-                            SkillSelection.Quick -> combine(
-                                model.skillChoices.quick.skill1,
-                                model.skillChoices.quick.skill2
-                            ) { v1, v2 -> listOf(v1, v2) }
+            // free
+            skills += model.skillChoices.freeSkill
 
-                            SkillSelection.Learning -> combine(
-                                model.skillChoices.learning.skill1,
-                                model.skillChoices.learning.skill2
-                            ) { v1, v2 -> listOf(v1, v2) }
+            // pickings
+            skills += when (model.skillSelection) {
+                // quick
+                SkillSelection.Quick -> model.skillChoices.quick.run { listOf(skill1, skill2) }
 
-                            SkillSelection.Roll -> combine(
-                                model.skillChoices.roll.choice1,
-                                model.skillChoices.roll.choice2,
-                                model.skillChoices.roll.choice3
-                            ) { v1, v2, v3 ->
-                                listOf(v1, v2, v3)
-                            }.map { roll ->
-                                roll.mapNotNull { it.third }
-                            }
-                        }
-                    }
-                        .flatMapLatest { it }
+                // learn
+                SkillSelection.Learning -> model.skillChoices.learning.run { listOf(skill1, skill2) }
 
-
-                    skillFlows += model.fociChoices.map { foci -> foci.toList().mapNotNull { it?.second } }
-
-                    if (lvl != 0) {
-                        skillFlows += model.skillOverflows
-                    }
-
-                    combine(*skillFlows.toTypedArray()) { skills: Array<List<Skill>> -> skills.flatMap { it } }
-                        .map { skills ->
-                            val skillMap = Skill.values().associateWith { -1 }.toMutableMap()
-
-                            skills.forEach { skill -> skillMap.computeIfPresent(skill) { _, v -> v + 1 } }
-
-                            skillMap
-                        }
-                        .map {
-                            // Level 0 is raw before capping
-                            when (lvl) {
-                                0 -> it
-                                1 -> {
-                                    val skillMaxLevel = skillMaxLevel(level)
-                                    it.mapValues { (_, v) -> if (v > skillMaxLevel) 1 else v }
-                                }
-
-                                else -> throw Exception("CARP")
-                            }
-                        }
-                        .share()
-                }
-
-                else -> {
-                    combine(
-                        skillMap(model, level = lvl - 1),
-                        model.levelUpChoices[lvl]!!,
-                    ) { map, levelUpChoices ->
-
-                        val newMap = map.toMutableMap()
-
-                        // Focus
-                        levelUpChoices.focus?.second?.run {
-                            newMap.computeIfPresent(this) { _, v ->
-                                val skillMaxLevel = skillMaxLevel(level)
-
-                                when(v) {
-                                    skillMaxLevel -> v
-                                    -1 -> 1
-                                    0 -> 1
-                                    1 -> 2
-                                    else -> v
-                                }
-                            }
-                        }
-
-                        // Skill bumps
-                        levelUpChoices.skillBumps.forEach {
-                            newMap.computeIfPresent(it) { _, v -> v + 1 }
-                        }
-                        newMap
-                    }
-                        .share()
+                // roll
+                SkillSelection.Roll -> model.skillChoices.roll.run {
+                    listOfNotNull(
+                        choice1.third,
+                        choice2.third,
+                        choice3.third
+                    )
                 }
             }
+
+            // foci
+            skills += model.fociChoices.toList().mapNotNull { it?.second }
+
+            // overflows
+            if (level != 0) skills += model.skillOverflows
+
+            // build it
+            val skillMap = Skill.values().associateWith { -1 }.toMutableMap()
+
+            skills.forEach { skillMap.computeIfPresent(it) { _, v -> v + 1 } }
+
+            when (level) {
+                0 -> skillMap
+                1 -> {
+                    val skillMaxLevel = skillMaxLevel(level)
+                    skillMap.mapValues { (_, v) -> if (v > skillMaxLevel) 1 else v }
+                }
+
+                else -> throw Exception("CARP")
+            }
+        }
+
+        else -> {
+
+            val skillMap = skillMap(model, level - 1).toMutableMap()
+            val levelUpChoices = model.levelUpChoices[level]!!
+
+            // focus
+            levelUpChoices.focus?.second?.run {
+                skillMap.computeIfPresent(this) { _, v ->
+                    val skillMaxLevel = skillMaxLevel(level)
+
+                    when (v) {
+                        skillMaxLevel -> v
+                        -1 -> 1
+                        0 -> 1
+                        1 -> 2
+                        else -> v
+                    }
+                }
+            }
+
+            // skill bumps
+            levelUpChoices.skillBumps.forEach {
+                skillMap.computeIfPresent(it) { _, v -> v + 1 }
+            }
+
+            skillMap
         }
     }
 
@@ -124,8 +97,8 @@ fun skillMaxLevel(level: Int): Int =
         .maxOf { it.key }
 
 
-fun getCreationUncappedSkills(model: UiModel) = runBlocking {
-    skillMap(model)
-        .map { it.filterValues { v -> v < 1 }.keys.sorted() }
-        .share()
-}
+fun getCreationUncappedSkills(model: UiModel) =
+    skillMap(model, 0)
+        .filterValues { it < 1 }
+        .keys
+        .sorted()
